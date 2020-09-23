@@ -30,6 +30,8 @@ firebase.auth().onAuthStateChanged(function(user) {
     document.getElementById("app").style.display = "inline-block";
     onInitialized();
   } else {
+    document.getElementById("auth").style.display = "inline-block";
+    document.getElementById("app").style.display = "none";
     // User is signed out.
   }
 });

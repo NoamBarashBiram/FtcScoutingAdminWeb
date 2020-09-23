@@ -2,3 +2,12 @@ body {
   background-color: #0bbb46;
   color: white;
 }
+
+#auth {
+  display: inline-block;
+}
+
+#app {
+  margin-left: 10%;
+  display: none;
+}

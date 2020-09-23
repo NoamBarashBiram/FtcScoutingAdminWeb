@@ -1,0 +1,37 @@
+</<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Ftc Scouting Admin</title>
+    <link type="text/css" rel="stylesheet" href="index.css" />
+  </head>
+  <body>
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/7.21.0/firebase-app.js"></script>
+
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+          https://firebase.google.com/docs/web/setup#available-libraries -->
+    <script src="https://www.gstatic.com/firebasejs/7.21.0/firebase-analytics.js"/></script>
+    <script src="https://www.gstatic.com/firebasejs/7.21.0/firebase-database.js"/></script>
+    <script src="https://www.gstatic.com/firebasejs/7.21.0/firebase-auth.js"/></script>
+
+    <script src="index.js"></script>
+    <center>
+      <h1>Ftc Scouting Admin</h1>
+      <fieldset style="display: inline-block; margin: auto;" id="auth">
+        <legend>Authentication</legend>
+        <input type="text" placeholder="Username" id="username" onkeydown="if (event.keyCode == 13) {document.getElementById('signInBtn').click();}"/>
+        <input type="password" placeholder="Password" id="password" onkeydown="if (event.keyCode == 13) {document.getElementById('signInBtn').click();}"/>
+        <button onclick="signIn(document.getElementById('username').value, document.getElementById('password').value)" id="signInBtn" >Sign In</button>
+      </fieldset>
+      <div style="display: none" id="app">
+        <h3>Events: </h3>
+        <div id="events"></div>
+        <h3>Auto: </h3>
+        <div id=""></div>
+        <h3></h3>
+      </div>
+    </center>
+
+  </body>
+</html>

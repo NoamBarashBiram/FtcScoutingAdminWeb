@@ -13,30 +13,30 @@ const apiUrl = "https://theorangealliance.org/api/",
       }
     };
 
-async function fetchOrange(orangeReq, quarries){
+async function fetchOrange(orangeReq, queries){
     /**
     * communicate with TOA api @link https://theorangealliance.org/apidocs
     * @param orangeReq sets the location to request
-    * @param quarries an array of [key, value]s to pass in GET
+    * @param queries an array of [key, value]s to pass in GET
     * @returns the response in JSON format
     **/
 
   let url = apiUrl + orangeReq;
 
-  if (quarries != undefined){
-    // Yay, quarries are present
+  if (queries != undefined){
+    // Yay, queries are present
     let first = true;
-    for (quarry of quarries){
+    for (query of queries){
       if (first) {
         url += "?";
         // has to start with ?
         first = false;
       } else {
         url += "&";
-        // there's already a quarry behind, so add &
+        // there's already a query behind, so add &
       }
-      url += quarry[0] + "=" + quarry[1];
-      // here we actually add the quarry
+      url += query[0] + "=" + query[1];
+      // here we actually add the query
     }
   }
   console.log("fetching " + url);

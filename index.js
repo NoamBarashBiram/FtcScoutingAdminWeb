@@ -74,17 +74,20 @@ function eventSelected(value){
 }
 
 function setEvent(){
+  // get the matches of selected event
   fetchOrange(eventsReq + eventKey + "/matches")
     .then(data => {
       closeModal();
       for (match of Object.values(data)){
         let participants = [];
         for (team of Object.values(match.participants)){
+          // for each participant, create the name 'TEAMNAME #NUMBER'
           participants.push(team.team.team_name_short + " #" + team.team.team_number);
         }
+        // register the match in the teams
         registerMatch(match.match_name, participants);
       }
-      console.log(teams[0].getMatches());
+      // reset teams for next event addition
       teams = [];
     })
 }
@@ -99,9 +102,17 @@ function updateUI(snapshot, mode){
     }
   } else if (mode == Modes.CONFIG){
     configSnapshot = snapshot;
-    readConfig();
+    if (readConfig()){
+      console.log("Proceeding to UI");
+      for (autoField of autoFields){
+        
+      }
+    } else {
+      console.log("Updateing Config");
+      refernce.child("config").update(configSnapshot);
+    }
   } else {
-    console.error("Wrong mode, wierd");
+    console.error("Wrong mode, that's wierd");
   }
 }
 

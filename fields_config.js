@@ -83,32 +83,39 @@ class Field {
   }
 
   validate(){
-    error = false;
+    valid = true;
     if (typeof attrs.name != "string"){
+      valid = false;
       attrs.name = configSnapshot[this.kind][this.index].name = "No Name Found";
     }
     if (this.type == Type.UNKNOWN){
+      valid = false;
       this.type = configSnapshot[this.kind][this.index].type = Type.STRING;
     } else if (this.type == Type.INTEGER){
       if (attrs.min == undefined){
+        valid = false;
         attrs.min = configSnapshot[this.kind][this.index].min = 0;
       } else {
         attrs.min = parseInt(attrs.min);
         if (isNaN(attrs.min)){
+          valid = false;
           attrs.min = configSnapshot[this.kind][this.index].min = 0;
         }
       }
 
       if (attrs.max == undefined){
+        valid = false;
         attr.max = configSnapshot[this.kind][this.index].max = attrs.min + 1;
       } else {
         attrs.max = parseInt(attrs.max);
         if (isNaN(attrs.max) || attrs.max <= attrs.min){
+          valid = false;
           attr.max = configSnapshot[this.kind][this.index].max = attrs.min + 1;
         }
       }
     } else if (this.type == Type.CHOICE){
       if (typeof attrs.entries != "string"){
+        valid = false;
         attr.entries = configSnapshot[this.kind][this.index].entries = "No,Entries,Found";
       }
     }

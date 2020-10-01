@@ -1,5 +1,7 @@
-var refernce, uid, database, selectedRegion, selectedSeason, selectedEventName, selectedEventKey;
-var seasonSelect, regionSelect, eventSelect, configSnapshot;
+var refernce, uid, database, selectedRegion, selectedSeason,
+    selectedEventName, selectedEventKey;
+var seasonSelect, regionSelect, eventSelect, configSnapshot,
+    modal, eventsDiv, auth, app;
 
 const Modes = {
   EVENTS: 0,
@@ -7,19 +9,25 @@ const Modes = {
 };
 
 function removeEvent(event){
+  // removes an event with the name @param event
   if (window.confirm("Are you sure you want to delete " + event + "?")){
     refernce.child("Events").child(event).remove();
   }
 }
 
 document.body.onload = function() {
+  // initialize variables that hold key objects
   seasonSelect = document.getElementById("seasonSelect");
   regionSelect = document.getElementById("regionSelect");
   eventSelect  = document.getElementById("eventSelect");
+  modal = document.getElementById("myModal");
+  eventsDiv = document.getElementById("events");
+  auth = document.getElementById("auth");
+  app = document.getElementById("app");
 }
 
 function addEvent(){
-  document.getElementById("myModal").style.display = "block";
+  modal.style.display = "block";
   fetchOrange(seasonsReq).then(data => {
     seasonSelect.innerHTML = "<option style='display: none'>Select Season</option>";
     for (season of Object.keys(data)){
@@ -83,29 +91,32 @@ function setEvent(){
 
 function updateUI(snapshot, mode){
   if (mode == Modes.EVENTS){
-    // remove all events from the <div>
-    document.getElementById("events").innerHTML = "";
+    // remove all events from the events <div>
+    eventsDiv.innerHTML = "";
     for (key of Object.keys(snapshot)){
       // add the events
-      document.getElementById("events").innerHTML += "<div class='deleteable'>" + key + "<span class='x' onclick=\"removeEvent('" + key + "')\">&#10006;</span></div>";
+      eventsDiv.innerHTML += "<div class='deleteable'>" + key + "<span class='x' onclick=\"removeEvent('" + key + "')\">&#10006;</span></div>";
     }
   } else if (mode == Modes.CONFIG){
     configSnapshot = snapshot;
     readConfig();
   } else {
-    console.error("Wrong mode wtf");
+    console.error("Wrong mode, wierd");
   }
 }
 
 function onInitialized(){
   // update the UI when something changes
   refernce.child("Events").on("value", function (snapshot) {
+    // events changed
     updateUI(snapshot.val(), Modes.EVENTS);
   })
   refernce.child("config").on("value", function (snapshot) {
+    // configuraton changed
     updateUI(snapshot.val(), Modes.CONFIG);
   })
 }
+
 // Web app's Firebase configuration
 var firebaseConfig = {
     apiKey: "AIzaSyCNrCAamjZKhf7q0Zras9vq3p1ZVnzu5BI",
@@ -128,15 +139,15 @@ firebase.auth().onAuthStateChanged(function(user) {
     uid = user.uid;
     refernce = database.ref(uid);
     // hide the authentication part
-    document.getElementById("auth").style.display = "none";
+    auth.style.display = "none";
     // show the acual UI
-    document.getElementById("app").style.display = "block";
+    app.style.display = "block";
     onInitialized();
   } else {
     // show the authentication part
-    document.getElementById("auth").style.display = "inline-block";
+    auth.style.display = "inline-block";
     // hide the app
-    document.getElementById("app").style.display = "none";
+    app.style.display = "none";
     // User is signed out.
   }
 });
@@ -144,14 +155,16 @@ firebase.auth().onAuthStateChanged(function(user) {
 function signIn(email, password){
   firebase.auth().signInWithEmailAndPassword(email, password)
     .catch(function(error) {
+      // authentication failed
       // error codes start with "auth/", and supstring removes it
       window.alert(error.code.substr(5) + ": " + error.message);
     });
 }
 
 function closeModal(){
-  document.getElementById('myModal').style.display = 'none';
+  // close modal and reset it
+  modal.style.display = 'none';
   seasonSelect.innerHTML = regionSelect.innerHTML = '<option>Loading from TOA...</option>';
   eventSelect.innerHTML = '<option>Choose season and region</option>';
-  selectedRegion = selectedSeason = selectedEventName = selectedEventKey = undefined
+  selectedRegion = selectedSeason = selectedEventName = selectedEventKey = undefined;
 }

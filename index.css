@@ -26,7 +26,7 @@ div.add {
   color: black;
 }
 
-div.add, span.x {
+div.add, span.x, span.edit {
   border-width: thin;
   border-color: black;
   border-style: solid;
@@ -41,7 +41,7 @@ div.add, span.x {
   -o-user-select:none;
 }
 
-h3#eventsTitle:hover .add {
+h3:hover .add {
   opacity: 1;
 }
 
@@ -51,11 +51,26 @@ span.x {
   padding: 0 2px 0 2px;
 }
 
-div.deleteable {
+span.edit ~ span.x {
+  left: 20px;
+}
+
+span.edit {
+  left: 10px;
+  color: black;
+  padding: 0 2px 0 2px;
+  transform: rotate(90deg);
+}
+
+div.deleteable, div.editable {
   width: 100%;
 }
 
 div.deleteable:hover span.x {
+  opacity: 1;
+}
+
+div.editable:hover span.edit {
   opacity: 1;
 }
 

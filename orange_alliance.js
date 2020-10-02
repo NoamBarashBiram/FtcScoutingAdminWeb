@@ -46,7 +46,6 @@ async function fetchOrange(orangeReq, queries){
   return response.json();
 }
 
-
 var teams = [];
 
 class Team {

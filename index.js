@@ -1,7 +1,7 @@
 var refernce, uid, database, selectedRegion, selectedSeason,
     selectedEventName, selectedEventKey;
-var seasonSelect, regionSelect, eventSelect, configSnapshot,
-    modal, eventsDiv, auth, app;
+var seasonSelect, regionSelect, eventSelect, configSnapshot, eventsSnapshot,
+    eventAdditionDialog, eventsP, autoP, telOpP, auth, app;
 
 const Modes = {
   EVENTS: 0,
@@ -15,19 +15,28 @@ function removeEvent(event){
   }
 }
 
+function removeField(kind, index){
+  // removes an event with the name @param event
+  if (window.confirm("Are you sure you want to delete " + configSnapshot[kind][index].name + "?")){
+    refernce.child("config").child(kind).child(index).remove();
+  }
+}
+
 document.body.onload = function() {
   // initialize variables that hold key objects
   seasonSelect = document.getElementById("seasonSelect");
   regionSelect = document.getElementById("regionSelect");
   eventSelect  = document.getElementById("eventSelect");
-  modal = document.getElementById("myModal");
-  eventsDiv = document.getElementById("events");
+  eventAdditionDialog = document.getElementById("eventAddition");
+  eventsP = document.getElementById("events");
+  autoP = document.getElementById("auto");
+  telOpP = document.getElementById("telop");
   auth = document.getElementById("auth");
   app = document.getElementById("app");
 }
 
 function addEvent(){
-  modal.style.display = "block";
+  eventAdditionDialog.style.display = "block";
   fetchOrange(seasonsReq).then(data => {
     seasonSelect.innerHTML = "<option style='display: none'>Select Season</option>";
     for (season of Object.keys(data)){
@@ -58,7 +67,7 @@ function selected(){
         division = data[event].division_name;
         event = data[event].event_name;
         if (division != null){
-          event += "- " + division;
+          event += "- " + division + " Division";
         }
         eventSelect.innerHTML += "<option value='" + eventKey + "|" + event + "'>" + event + "</option>";
       }
@@ -74,10 +83,10 @@ function eventSelected(value){
 }
 
 function setEvent(){
+  closeEventAddition();
   // get the matches of selected event
-  fetchOrange(eventsReq + eventKey + "/matches")
+  fetchOrange(eventsReq + selectedEventKey + "/matches")
     .then(data => {
-      closeModal();
       for (match of Object.values(data)){
         let participants = [];
         for (team of Object.values(match.participants)){
@@ -87,25 +96,64 @@ function setEvent(){
         // register the match in the teams
         registerMatch(match.match_name, participants);
       }
+      eventJSON = {};
+      eventExists = Object.keys(eventsSnapshot).includes(selectedEventName);
+      for (team of teams){
+        let teamConfig = undefined;
+        let fireTeam = fireKey(team.name);
+        let unplayed = "";
+        if (eventExists && Object.keys(eventsSnapshot[selectedEventName]).includes(fireTeam)){
+          teamConfig = eventsSnapshot[selectedEventName][fireTeam];
+          unplayed = teamConfig["unplayed"];
+        }
+        matches = team.getMatches();
+        teamConfig = getNewConfig(matches.length, teamConfig);
+        teamConfig["matches"] = matches.join(";");
+        teamConfig["unplayed"] = unplayed;
+        eventJSON[fireTeam] = teamConfig;
+
+      }
+      console.log(eventJSON);
+
+      refernce.child("Events").child(selectedEventName).update(eventJSON);
+
       // reset teams for next event addition
       teams = [];
+      selectedEventName = selectedEventKey = undefined;
     })
 }
 
 function updateUI(snapshot, mode){
   if (mode == Modes.EVENTS){
-    // remove all events from the events <div>
-    eventsDiv.innerHTML = "";
-    for (key of Object.keys(snapshot)){
+    // remove all events from the events, auto and telOp <p>
+    eventsP.innerHTML = "";
+    for (event of Object.keys(snapshot)){
       // add the events
-      eventsDiv.innerHTML += "<div class='deleteable'>" + key + "<span class='x' onclick=\"removeEvent('" + key + "')\">&#10006;</span></div>";
+      eventsP.innerHTML += "<div class='deleteable'>" + event +
+                            "<span class='x' onclick=\"removeEvent('" + event + "')\">&#10006;</span>\
+                            </div>";
     }
+    eventsSnapshot = snapshot;
   } else if (mode == Modes.CONFIG){
+    autoP.innerHTML = telOpP.innerHTML = "";
     configSnapshot = snapshot;
     if (readConfig()){
       console.log("Proceeding to UI");
       for (autoField of autoFields){
-        
+        autoP.innerHTML += "<div class='deleteable editable'>" + autoField.attrs.name +
+                           ", "+ longTypes[autoField.type] +
+                           stringify(autoField) +
+                           "<span class='edit' onclick=\"editField(auto, " + autoField.index + ")\">&#x270E;</span>" +
+                           "<span class='x' onclick=\"removeField(auto, " +autoField.index + ")\">&#10006;</span>\
+                           </div>"
+      }
+      for (telOpField of telOpFields){
+        telOpP.innerHTML += "<div class='deleteable editable'>" + telOpField.attrs.name +
+                           ", "+ longTypes[telOpField.type] +
+                           stringify(telOpField) +
+                           "<span class='edit' onclick=\"editField(telOp, " + telOpField.index + ")\">&#x270E;</span>" +
+                           "<span class='x' onclick=\"removeField(telOp, " +telOpField.index + ")\">&#10006;</span>\
+                           </div>"
       }
     } else {
       console.log("Updateing Config");
@@ -114,6 +162,7 @@ function updateUI(snapshot, mode){
   } else {
     console.error("Wrong mode, that's wierd");
   }
+  repair();
 }
 
 function onInitialized(){
@@ -172,10 +221,10 @@ function signIn(email, password){
     });
 }
 
-function closeModal(){
+function closeEventAddition(){
   // close modal and reset it
-  modal.style.display = 'none';
+  eventAdditionDialog.style.display = 'none';
   seasonSelect.innerHTML = regionSelect.innerHTML = '<option>Loading from TOA...</option>';
   eventSelect.innerHTML = '<option>Choose season and region</option>';
-  selectedRegion = selectedSeason = selectedEventName = selectedEventKey = undefined;
+  selectedRegion = selectedSeason = undefined;
 }

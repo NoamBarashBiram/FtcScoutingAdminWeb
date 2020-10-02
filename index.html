@@ -15,9 +15,9 @@
     <script src="https://www.gstatic.com/firebasejs/7.21.0/firebase-database.js"/></script>
     <script src="https://www.gstatic.com/firebasejs/7.21.0/firebase-auth.js"/></script>
 
-    <script type="text/javascript" src="index.js"></script>
     <script type="text/javascript" src="fields_config.js"></script>
     <script type="text/javascript" src="orange_alliance.js"></script>
+    <script type="text/javascript" src="index.js"></script>
     <h1 style="text-align: left; padding-left: 50px;">Ftc Scouting Admin</h1>
     <center>
       <fieldset id="auth">
@@ -30,19 +30,19 @@
     <div id="app">
       <h3 id="eventsTitle">Events: <div class="add" onclick="addEvent()">+</div></h3>
       <p id="events"></p>
-      <h3>Auto: </h3>
+      <h3>Auto: <div class="add" onclick="addField(auto)">+</div></h3>
       <p id="auto"></p>
-      <h3>TelOp: </h3>
+      <h3>TelOp: <div class="add" onclick="addField(telOp)">+</div></h3>
       <p id="telop"></p>
       <button onclick="firebase.auth().signOut()" class="signOutBtn" >Sign Out</button>
       </div>
     </center>
 
     <!-- The Modal -->
-    <div id="myModal" class="modal">
+    <div id="eventAddition" class="modal">
       <!-- Modal content -->
       <div class="modal-content">
-        <span class="close" onclick="closeModal()">&times;</span>
+        <span class="close" onclick="closeEventAddition()">&times;</span>
         <label for="seasonSelect">Select Season: </label>
         <select name="seasonSelect" id="seasonSelect" onchange="selectedSeason=this.value; selected()">
           <option value="undefined">Loading from TOA...</option>

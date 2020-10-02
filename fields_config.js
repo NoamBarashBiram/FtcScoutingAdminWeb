@@ -23,20 +23,29 @@ const Type = {
     UNKNOWN: "???"
 };
 
+const longTypes = {
+  int: "Integer",
+  str: "String",
+  cho: "Choice",
+  tit: "Title",
+  bool: "Boolean",
+  "???": "Unknown"
+};
+
 function fireKey(str) {
-  return str.replace("$", "{dollar}")
-            .replace("[", "{bracketS}")
-            .replace("]", "{bracketE}")
-            .replace("#", "{hash}")
-            .replace(".", "{dot}");
+  return str.replaceAll("$", "{dollar}")
+            .replaceAll("[", "{bracketS}")
+            .replaceAll("]", "{bracketE}")
+            .replaceAll("#", "{hash}")
+            .replaceAll(".", "{dot}");
 }
 
 function unFireKey(str){
-  return str.replace("{dollar}",   "$")
-            .replace("{bracketS}", "[")
-            .replace("{bracketE}", "]")
-            .replace("{hash}",     "#")
-            .replace("{dot}",      ".");
+  return str.replaceAll("{dollar}",   "$")
+            .replaceAll("{bracketS}", "[")
+            .replaceAll("{bracketE}", "]")
+            .replaceAll("{hash}",     "#")
+            .replaceAll("{dot}",      ".");
 }
 
 autoFields = [];
@@ -69,9 +78,67 @@ function getTelOpField(name){
   return null;
 }
 
+function getNewValue(field, matches, lastValue){
+  if (matches == undefined){
+    switch (field.type) {
+      case Type.INTEGER:
+        return field.attrs.min;
+      case Type.CHOICE:
+      case Type.BOOLEAN:
+        return 0;
+      default:
+        return "";
+    }
+  }
+  arr = [];
+  let defVal = getNewValue(field);
+  let pitVal = defVal;
+  if (lastValue != undefined){
+    arr = lastValue.split(";");
+    pitVal = arr.pop();
+  }
+  while (arr.length > matches - 1){
+    arr.pop();
+  }
+  while (arr.length < matches - 1){
+    arr.push(defVal);
+  }
+  arr.push(pitVal);
+  return arr.join(";");
+}
+
+function getNewConfig(matches, lastValues){
+  let config = {}
+  config[auto] = {}
+  for (field of autoFields){
+    if (field.type != Type.TITLE){
+      let lastValue = undefined;
+      if (lastValues != undefined && lastValues[auto]){
+        lastValue = lastValues[auto][field.attrs.name]
+      }
+      config[auto][field.attrs.name] = getNewValue(field, matches, lastValue);
+    }
+  }
+
+  config[telOp] = {}
+  for (field of telOpFields){
+    if (field.type != Type.TITLE){
+      let lastValue = undefined;
+      if (lastValues != undefined && lastValues[telOp]){
+        lastValue = lastValues[telOp][field.attrs.name]
+      }
+      config[telOp][field.attrs.name] = getNewValue(field, matches, lastValue);
+    }
+  }
+
+  return config;
+}
+
+
 function readConfig(){
   autoFields = [];
   telOpFields = [];
+  configCache = {}
 
   let valid = true;
 
@@ -170,4 +237,24 @@ class Field {
 
     return valid;
   }
+}
+
+function stringify(field){
+  let str = "";
+  switch (field.type) {
+    case Type.INTEGER:
+      str += ", Min: " + field.attrs.min;
+      str += ", Max: " + field.attrs.max;
+    case Type.BOOLEAN:
+      str += ", Score: " + field.attrs.score;
+      break;
+    case Type.CHOICE:
+      str += ", Entries: " + field.attrs.entries;
+      break;
+  }
+  return str;
+}
+
+function repair() {
+  
 }

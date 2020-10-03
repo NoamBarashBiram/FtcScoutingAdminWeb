@@ -33,7 +33,8 @@ const longTypes = {
 };
 
 function fireKey(str) {
-  return str.replaceAll("$", "{dollar}")
+  return str.replaceAll("{", "{curlBracS}")
+            .replaceAll("$", "{dollar}")
             .replaceAll("[", "{bracketS}")
             .replaceAll("]", "{bracketE}")
             .replaceAll("#", "{hash}")
@@ -41,17 +42,19 @@ function fireKey(str) {
 }
 
 function unFireKey(str){
-  return str.replaceAll("{dollar}",   "$")
-            .replaceAll("{bracketS}", "[")
-            .replaceAll("{bracketE}", "]")
-            .replaceAll("{hash}",     "#")
-            .replaceAll("{dot}",      ".");
+  return str.replaceAll("{dollar}",    "$")
+            .replaceAll("{bracketS}",  "[")
+            .replaceAll("{bracketE}",  "]")
+            .replaceAll("{hash}",      "#")
+            .replaceAll("{dot}",       ".")
+            .replaceAll("{curlBracS}", "{");
 }
 
 autoFields = [];
 telOpFields = [];
 
 function getField(name, kind){
+
   if (kind == auto){
     return getAutoField(name);
   } else if (kind == telOp){
@@ -255,6 +258,147 @@ function stringify(field){
   return str;
 }
 
+function remove(array, element){
+  let index = array.indexOf(element);
+  if (index != -1){
+    array.splice(index, 1);
+    return array;
+  }
+  return array;
+}
+
+function validate(value, field, matches){
+  let valid = true,
+    fieldEntries = field.type == Type.CHOICE ?
+      field.attrs.entries.split(",").length - 1 : 0;
+  value = value.split(";");
+
+  if (field.type == Type.INTEGER){
+    for (let val in value){
+      value[val] = parseInt(value[val]);
+      if (value[val] > field.attrs.max){
+        value[val] = field.attrs.max;
+        valid = false;
+      } else if (value[val] < field.attrs.min || isNaN(value[val])){
+        value[val] = field.attrs.min;
+        valid = false;
+      }
+    }
+  } else if (field.type == Type.CHOICE){
+    for (let val in value){
+      value[val] = parseInt(value[val]);
+      if (isNaN(value[val]) || value[val] > fieldEntries || value[val] < 0){
+        value[val] = 0;
+        valid = false;
+      }
+    }
+  } else if (field.type == Type.BOOLEAN){
+    for (let val in value){
+      if (!["0", "1"].includes(value[val])){
+        value[val] = "0"
+      }
+    }
+  }
+
+  if (valid && value.length != matches){
+    valid = false;
+  }
+
+  return valid ? undefined : value.join(";");
+}
+
 function repair() {
-  
+  let valid = true;
+  for (event of Object.keys(eventsSnapshot)){
+    for (team of Object.keys(eventsSnapshot[event])){
+      let localAutos = [], localTelOps = [];
+
+      let matches = eventsSnapshot[event][team].matches;
+      if (matches == undefined || ! (typeof matches == "string")){
+        matches = "Scouting Pit";
+        valid = false;
+        eventsSnapshot[event][team].matches = matches;
+      }
+
+      matches = matches.split(";").length;
+
+      if (eventsSnapshot[event][team][auto] != undefined){
+        for (let autoField of Object.keys(eventsSnapshot[event][team][auto])){
+          localAutos.push(autoField);
+        }
+      } else {
+        valid = false;
+        eventsSnapshot[event][team][auto] = {};
+      }
+
+      if (eventsSnapshot[event][team][telOp] != undefined){
+        for (let telOpField of Object.keys(eventsSnapshot[event][team][telOp])){
+          localTelOps.push(telOpField);
+        }
+      } else {
+        valid = false;
+        eventsSnapshot[event][team][telOp] = {};
+      }
+
+      for (let autoField of autoFields){
+        if (autoField.type == Type.TITLE){
+          continue;
+        }
+        let lastValue = undefined;
+        if (!localAutos.includes(autoField.attrs.name)){
+            valid = false;
+        } else {
+          localAutos = remove(localAutos, autoField.attrs.name);
+          let validVal = validate(eventsSnapshot[event][team][auto][autoField.attrs.name], autoField, matches);
+          if (validVal != undefined){
+            valid = false;
+            lastValue = validVal;
+          } else {
+            continue;
+          }
+        }
+        eventsSnapshot[event][team][auto][autoField.attrs.name] = getNewValue(autoField, matches, lastValue);
+      }
+
+      if (localAutos.length != 0){
+        valid = false;
+        for (autoField of localAutos){
+          eventsSnapshot[event][team][auto][autoField] = null;
+        }
+      }
+
+      for (let telOpField of telOpFields){
+        if (telOpField.type == Type.TITLE){
+          continue;
+        }
+        let lastValue = undefined;
+        if (!localTelOps.includes(telOpField.attrs.name)){
+            valid = false;
+        } else {
+          localTelOps = remove(localTelOps, telOpField.attrs.name);
+          let validVal = validate(eventsSnapshot[event][team][telOp][telOpField.attrs.name], telOpField, matches);
+          if (validVal != undefined){
+            valid = false;
+            lastValue = validVal;
+          } else {
+            continue;
+          }
+        }
+        eventsSnapshot[event][team][telOp][telOpField.attrs.name] = getNewValue(telOpField, matches, lastValue);
+      }
+
+      if (localTelOps.length != 0){
+        valid = false;
+        for (telOpField of localTelOps){
+          eventsSnapshot[event][team][telOp][telOpField] = null;
+        }
+      }
+    }
+  }
+
+  if (!valid){
+    console.log("Invalidation Detected.");
+    console.log(eventsSnapshot);
+    refernce.child("Events").update(eventsSnapshot);
+  }
 }

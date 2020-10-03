@@ -113,7 +113,6 @@ function setEvent(){
         eventJSON[fireTeam] = teamConfig;
 
       }
-      console.log(eventJSON);
 
       refernce.child("Events").child(selectedEventName).update(eventJSON);
 
@@ -158,11 +157,14 @@ function updateUI(snapshot, mode){
     } else {
       console.log("Updateing Config");
       refernce.child("config").update(configSnapshot);
+      return;
     }
   } else {
     console.error("Wrong mode, that's wierd");
   }
-  repair();
+  if (configSnapshot != undefined){
+    repair();
+  }
 }
 
 function onInitialized(){

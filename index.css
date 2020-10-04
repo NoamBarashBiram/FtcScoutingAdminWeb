@@ -81,7 +81,7 @@ button.signOutBtn {
   font-size: 25px;
 }
 
-/* event choosing dialog */
+/* dialogs */
 /* The Modal (background) */
 .modal {
   display: none; /* Hidden by default */
@@ -121,8 +121,7 @@ button.signOutBtn {
   -o-user-select:none;
 }
 
-.close:hover,
-.close:focus {
+.close:hover, .close:focus {
   color: #000;
   text-decoration: none;
   cursor: pointer;

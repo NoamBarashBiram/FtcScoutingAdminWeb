@@ -144,18 +144,30 @@ function readConfig(){
   configCache = {}
 
   let valid = true;
-
-  for (autoKey of Object.keys(configSnapshot[auto])){
-    if (autoKey != placeholder){
-      let autoField = new Field(autoKey, auto, configSnapshot[auto][autoKey]);
-      valid = valid &&  autoField.validate();
+  let i = 0;
+  for (let autoIndex of Object.keys(configSnapshot[auto])){
+    if (autoIndex != placeholder){
+      if (autoIndex != i.toString()){
+        valid = false;
+        let i2 = i;
+        while (Object.keys(configSnapshot[auto]).includes(i2.toString())){
+          i2++;
+        }
+        configSnapshot[auto][i2] = configSnapshot[auto][autoIndex];
+        configSnapshot[auto][autoIndex] = null;
+        autoIndex = i2;
+      }
+      let autoField = new Field(autoIndex, auto, configSnapshot[auto][autoIndex]);
+      valid = valid && autoField.validate();
       autoFields.push(autoField);
+      i++;
     }
   }
 
-  for (telOpKey of Object.keys(configSnapshot[telOp])){
-    if (telOpKey != placeholder){
-      let telOpField = new Field(telOpKey, telOp, configSnapshot[telOp][telOpKey]);
+  i = 0;
+  for (let telOpIndex of Object.keys(configSnapshot[telOp])){
+    if (telOpIndex != placeholder){
+      let telOpField = new Field(telOpIndex, telOp, configSnapshot[telOp][telOpIndex]);
       valid = valid && telOpField.validate();
       telOpFields.push(telOpField);
     }

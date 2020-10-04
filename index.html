@@ -38,9 +38,8 @@
       </div>
     </center>
 
-    <!-- The Modal -->
+    <!-- The modal in which event addition is being done -->
     <div id="eventAddition" class="modal">
-      <!-- Modal content -->
       <div class="modal-content">
         <span class="close" onclick="closeEventAddition()">&times;</span>
         <label for="seasonSelect">Select Season: </label>
@@ -62,6 +61,52 @@
         <br>
         <br>
         <button id="addEvent" onclick="setEvent()" disabled>Add Event</button>
+      </div>
+    </div>
+
+    <!-- The modal in which event addition is being done -->
+    <div id="fieldAddition" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeFieldAddition()">&times;</span>
+        <label for="fieldName"> Field Name: </label>
+        <input type="text" name="fieldName" id="fieldName" placeholder="Name" onchange="validateField()" />
+        <br>
+        <br>
+        <label for="fieldType">Field type: </label>
+        <select name="fieldType" id="fieldType" onchange="fieldTypeChanged(this.value)">
+          <option value="tit">Title</option>
+          <option value="str">String</option>
+          <option value="bool">Boolean</option>
+          <option value="int">Integer</option>
+          <option value="cho">Choice</option>
+        </select>
+        <br>
+        <br>
+        <div id="fieldMinMax" style="display:none">
+          <label for="fieldMin">Min: </label>
+          <input id="fieldMin" name="fieldMin" placeholder="Minimum" type="number" step="1" value="0" onchange="validateMinMax('min')">
+          <br>
+          <br>
+          <label for="fieldMax">Max: </label>
+          <input id="fieldMax" name="fieldMax" placeholder="Maximum" type="number" step="1" value="1" onchange="validateMinMax('max')">
+          <br>
+          <br>
+        </div>
+        <div id="fieldScoreContainer" style="display:none">
+          <label for="fieldScore">Score: </label>
+          <input id="fieldScore" name="fieldScore", min="0" value="0" type="number" step="1" placeholder="Score" onchange="validateField()">
+          <br>
+          <br>
+        </div>
+        <div id="fieldEntriesContainer" style="display:none">
+          <label style="float:left" for="fieldEntries">Entries: </label>
+          <div style="padding: 0 15px 0 4px; overflow:hidden">
+            <input style="width:100%" id="fieldEntries" name="fieldEntries" placeholder="Type Entries, seperated by commas (,) (do not add spaces)" onchange="validateField()">
+          </div>
+          <br>
+          <br>
+        </div>
+        <button id="addField" disabled>Add Field</button>
       </div>
     </div>
 

@@ -1,7 +1,11 @@
 var refernce, uid, database, selectedRegion, selectedSeason,
     selectedEventName, selectedEventKey;
 var seasonSelect, regionSelect, eventSelect, configSnapshot, eventsSnapshot,
-    eventAdditionDialog, eventsP, autoP, telOpP, auth, app;
+    eventAdditionDialog, eventsP, autoP, telOpP,
+    fieldAdditionDialog, fieldType, fieldKind, fieldAdd, fieldName,
+    fieldScore, fieldScoreContainer, fieldMinMax, fieldMin, fieldMax,
+    fieldEntries, fieldEntriesContainer,
+    auth, app;
 
 const Modes = {
   EVENTS: 0,
@@ -27,12 +31,66 @@ document.body.onload = function() {
   seasonSelect = document.getElementById("seasonSelect");
   regionSelect = document.getElementById("regionSelect");
   eventSelect  = document.getElementById("eventSelect");
+  fieldAdditionDialog = document.getElementById("fieldAddition");
+  fieldType = document.getElementById("fieldType");
+  fieldAdd = document.getElementById("addField");
+  fieldName = document.getElementById("fieldName");
+  fieldScore = document.getElementById("fieldScore");
+  fieldScoreContainer = document.getElementById("fieldScoreContainer");
+  fieldMinMax = document.getElementById("fieldMinMax");
+  fieldEntries = document.getElementById("fieldEntries");
+  fieldEntriesContainer = document.getElementById("fieldEntriesContainer");
+  fieldMax = document.getElementById("fieldMax");
+  fieldMin = document.getElementById("fieldMin");
   eventAdditionDialog = document.getElementById("eventAddition");
   eventsP = document.getElementById("events");
   autoP = document.getElementById("auto");
   telOpP = document.getElementById("telop");
   auth = document.getElementById("auth");
   app = document.getElementById("app");
+}
+
+function addField(kind){
+  if (![auto, telOp].includes(kind)) return;
+  fieldKind = kind;
+  fieldAdditionDialog.style.display = "block";
+}
+
+function validateMinMax(caller){
+  max = parseInt(fieldMax.value);
+  switch (caller){
+    case 'min':
+      if ( <= fieldMin.value){
+        fieldMax.value += 1;
+      }
+  }
+}
+
+function validateField(){
+
+}
+
+function fieldTypeChanged(type){
+  fieldMinMax.style.display = "none";
+  fieldScoreContainer.style.display = "none";
+  fieldEntriesContainer.style.display = "none"
+  switch (type) {
+    case Type.INTEGER:
+      fieldMinMax.style.display = "block";
+    case Type.BOOLEAN:
+      fieldScoreContainer.style.display = "block";
+      break;
+    case Type.CHOICE:
+      fieldEntriesContainer.style.display = "block";
+  }
+  validateField();
+}
+
+function closeFieldAddition(){
+  // close modal and reset it
+  fieldAdditionDialog.style.display = 'none';
+  fieldName.value = "";
+  fieldType.value = "tit"
 }
 
 function addEvent(){
@@ -120,6 +178,14 @@ function setEvent(){
       teams = [];
       selectedEventName = selectedEventKey = undefined;
     })
+}
+
+function closeEventAddition(){
+  // close modal and reset it
+  eventAdditionDialog.style.display = 'none';
+  seasonSelect.innerHTML = regionSelect.innerHTML = '<option>Loading from TOA...</option>';
+  eventSelect.innerHTML = '<option>Choose season and region</option>';
+  selectedRegion = selectedSeason = undefined;
 }
 
 function updateUI(snapshot, mode){
@@ -221,12 +287,4 @@ function signIn(email, password){
       // error codes start with "auth/", and supstring removes it
       window.alert(error.code.substr(5) + ": " + error.message);
     });
-}
-
-function closeEventAddition(){
-  // close modal and reset it
-  eventAdditionDialog.style.display = 'none';
-  seasonSelect.innerHTML = regionSelect.innerHTML = '<option>Loading from TOA...</option>';
-  eventSelect.innerHTML = '<option>Choose season and region</option>';
-  selectedRegion = selectedSeason = undefined;
 }

@@ -53,14 +53,21 @@ function unFireKey(str){
 autoFields = [];
 telOpFields = [];
 
-function getField(name, kind){
-
+function getFieldByIndex(kind, index){
   if (kind == auto){
-    return getAutoField(name);
+    return autoFields[index];
   } else if (kind == telOp){
-    return getTelOpField(name);
+    return telOpFields[index];
   }
   return null;
+}
+
+function getField(name) {
+  let field = getAutoField(name);
+  if (field != null){
+    return field;
+  }
+  return getTelOpField(name);
 }
 
 function getAutoField(name){
@@ -410,7 +417,6 @@ function repair() {
 
   if (!valid){
     console.log("Invalidation Detected.");
-    console.log(eventsSnapshot);
     refernce.child("Events").update(eventsSnapshot);
   }
 }

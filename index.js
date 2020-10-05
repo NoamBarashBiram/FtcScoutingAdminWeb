@@ -2,9 +2,9 @@ var refernce, uid, database, selectedRegion, selectedSeason,
     selectedEventName, selectedEventKey;
 var seasonSelect, regionSelect, eventSelect, configSnapshot, eventsSnapshot,
     eventAdditionDialog, eventsP, autoP, telOpP,
-    fieldAdditionDialog, fieldType, fieldKind, fieldAdd, fieldName,
+    fieldAdditionDialog, fieldType, fieldKind, fieldAdd, fieldSave, fieldName,
     fieldScore, fieldScoreContainer, fieldMinMax, fieldMin, fieldMax,
-    fieldEntries, fieldEntriesContainer,
+    fieldEntries, fieldEntriesContainer, fieldIndex,
     auth, app;
 
 const Modes = {
@@ -33,6 +33,7 @@ document.body.onload = function() {
   eventSelect  = document.getElementById("eventSelect");
   fieldAdditionDialog = document.getElementById("fieldAddition");
   fieldType = document.getElementById("fieldType");
+  fieldSave = document.getElementById("saveField");
   fieldAdd = document.getElementById("addField");
   fieldName = document.getElementById("fieldName");
   fieldScore = document.getElementById("fieldScore");
@@ -50,24 +51,123 @@ document.body.onload = function() {
   app = document.getElementById("app");
 }
 
+function getNewFieldConf(){
+  let fieldConf = {}
+  fieldConf.name = fieldName.value;
+  fieldConf.type = fieldType.value;
+
+  switch (fieldType.value){
+    case Type.INTEGER:
+      fieldConf.min = parseInt(fieldMin.value);
+      fieldConf.max = parseInt(fieldMax.value);
+    case Type.BOOLEAN:
+      fieldConf.score = parseInt(fieldScore.value);
+      break;
+    case Type.CHOICE:
+      fieldConf.entries = fieldEntries.value;
+  }
+  return fieldConf;
+}
+
 function addField(kind){
+  if (kind == undefined){
+    let index = fieldKind == auto ? autoFields.length : telOpFields.length;
+    configSnapshot[fieldKind][index] = getNewFieldConf();
+    closeFieldAddition();
+    refernce.child("config").update(configSnapshot);
+    return;
+  }
   if (![auto, telOp].includes(kind)) return;
   fieldKind = kind;
   fieldAdditionDialog.style.display = "block";
+  fieldAdd.style.display = "block";
+}
+
+function saveField(){
+  let newConf = getNewFieldConf();
+  let newName = newConf.name, prevName = configSnapshot[fieldKind][fieldIndex].name
+  if (newName != prevName && newConf.type != Type.TITLE){
+     // only update events if name changed and the field is not title (obviously)
+    for (eventName of Object.keys(eventsSnapshot)){
+      for (teamName of Object.keys(eventsSnapshot[eventName])){
+        // take the previous value of this field
+        let prevValue = eventsSnapshot[eventName][teamName][fieldKind][prevName];
+        // assign it to the new name
+        eventsSnapshot[eventName][teamName][fieldKind][newName] = prevValue;
+        // and delete the previous
+        eventsSnapshot[eventName][teamName][fieldKind][prevName] = null;
+      }
+    }
+  }
+  configSnapshot[fieldKind][fieldIndex] = newConf;
+  closeFieldAddition();
+  // update configuration before events so the repair mechanism doesn't delete
+  // the seemingly redundent field and then reinitiate it with default values
+  refernce.child("config").update(configSnapshot);
+  refernce.child("Events").update(eventsSnapshot);
+}
+
+
+function editField(kind, index){
+  fieldKind = kind;
+  fieldIndex = index;
+  field = getFieldByIndex(kind, index);
+  fieldName.value = field.attrs.name;
+  fieldType.value = field.type;
+  switch (field.type){
+    case Type.INTEGER:
+      fieldMin.value = field.attrs.min;
+      fieldMax.value = field.attrs.max;
+    case Type.BOOLEAN:
+      fieldScore.value = field.attrs.score;
+      break;
+    case Type.CHOICE:
+      fieldEntries.value = field.attrs.entries;
+  }
+  fieldAdditionDialog.style.display = fieldSave.style.display = "block";
+  fieldTypeChanged(field.type);
 }
 
 function validateMinMax(caller){
-  max = parseInt(fieldMax.value);
+  let max = parseInt(fieldMax.value);
+  let min = parseInt(fieldMin.value);
+  if (fieldMax.value != ""){
+    fieldMax.value = max;
+  }
+  if (fieldMin.value != ""){
+    fieldMin.value = min;
+  }
+
   switch (caller){
     case 'min':
-      if ( <= fieldMin.value){
-        fieldMax.value += 1;
+      if (max <= min){
+        fieldMax.value = min + 1;
+      }
+      break;
+    case 'max':
+      if (min >= max){
+        fieldMin.value = max - 1;
       }
   }
+  validateField();
 }
 
 function validateField(){
-
+  let valid = fieldName.value != "";
+  switch (fieldType.value) {
+    case Type.INTEGER:
+      let min = fieldMin.value, max = fieldMax.value;
+      valid = !(isNaN(min) || isNaN(max) || min == "" || max == "") && valid;
+      valid = parseInt(max) >= parseInt(min) && valid
+    case Type.BOOLEAN:
+      valid = !(isNaN(fieldScore.value) || fieldScore.value == "") && valid;
+      break;
+    case Type.CHOICE:
+      valid = fieldEntries.value.split(",").length > 1 && valid;
+  }
+  fieldSave.disabled = !(valid);
+  valid &= getField(fieldName.value) == undefined;
+  fieldAdd.disabled = !(valid);
 }
 
 function fieldTypeChanged(type){
@@ -89,8 +189,12 @@ function fieldTypeChanged(type){
 function closeFieldAddition(){
   // close modal and reset it
   fieldAdditionDialog.style.display = 'none';
-  fieldName.value = "";
-  fieldType.value = "tit"
+  fieldName.value = fieldEntries.value = "";
+  fieldType.value = "tit";
+  fieldMax.value = 1;
+  fieldMin.value = fieldScore.value = 0;
+  fieldScoreContainer.style.display = fieldEntriesContainer.style.display =
+    fieldMinMax.style.display = fieldAdd.style.display = fieldSave.style.display = "none";
 }
 
 function addEvent(){
@@ -182,7 +286,7 @@ function setEvent(){
 
 function closeEventAddition(){
   // close modal and reset it
-  eventAdditionDialog.style.display = 'none';
+  eventAdditionDialog.style.display = fieldAdd.style.display = 'none';
   seasonSelect.innerHTML = regionSelect.innerHTML = '<option>Loading from TOA...</option>';
   eventSelect.innerHTML = '<option>Choose season and region</option>';
   selectedRegion = selectedSeason = undefined;

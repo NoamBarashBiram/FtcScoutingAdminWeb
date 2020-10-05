@@ -69,7 +69,7 @@
       <div class="modal-content">
         <span class="close" onclick="closeFieldAddition()">&times;</span>
         <label for="fieldName"> Field Name: </label>
-        <input type="text" name="fieldName" id="fieldName" placeholder="Name" onchange="validateField()" />
+        <input type="text" name="fieldName" id="fieldName" placeholder="Name" onkeyup="validateField()" />
         <br>
         <br>
         <label for="fieldType">Field type: </label>
@@ -84,29 +84,30 @@
         <br>
         <div id="fieldMinMax" style="display:none">
           <label for="fieldMin">Min: </label>
-          <input id="fieldMin" name="fieldMin" placeholder="Minimum" type="number" step="1" value="0" onchange="validateMinMax('min')">
+          <input id="fieldMin" name="fieldMin" placeholder="Minimum" type="number" step="1" value="0" onkeyup="validateMinMax('min')" onchange="if (isNaN(this.value) || this.value == ''){this.value = '0'; validateMinMax('min')}">
           <br>
           <br>
           <label for="fieldMax">Max: </label>
-          <input id="fieldMax" name="fieldMax" placeholder="Maximum" type="number" step="1" value="1" onchange="validateMinMax('max')">
+          <input id="fieldMax" name="fieldMax" placeholder="Maximum" type="number" step="1" value="1" onkeyup="validateMinMax('max')" onchange="if (isNaN(this.value) || this.value == ''){this.value = '0'; validateMinMax('max')}">
           <br>
           <br>
         </div>
         <div id="fieldScoreContainer" style="display:none">
           <label for="fieldScore">Score: </label>
-          <input id="fieldScore" name="fieldScore", min="0" value="0" type="number" step="1" placeholder="Score" onchange="validateField()">
+          <input id="fieldScore" name="fieldScore", min="0" value="0" type="number" step="1" placeholder="Score" onkeyup="validateField()">
           <br>
           <br>
         </div>
         <div id="fieldEntriesContainer" style="display:none">
           <label style="float:left" for="fieldEntries">Entries: </label>
           <div style="padding: 0 15px 0 4px; overflow:hidden">
-            <input style="width:100%" id="fieldEntries" name="fieldEntries" placeholder="Type Entries, seperated by commas (,) (do not add spaces)" onchange="validateField()">
+            <input style="width:100%" id="fieldEntries" name="fieldEntries" placeholder="Type Entries, seperated by commas (,) (do not add spaces)" onkeyup="validateField()">
           </div>
           <br>
           <br>
         </div>
-        <button id="addField" disabled>Add Field</button>
+        <button style="display:none" id="saveField" disabled onclick="saveField()">Save</button>
+        <button style="display:none" id="addField" disabled onclick="addField()">Add Field</button>
       </div>
     </div>
 

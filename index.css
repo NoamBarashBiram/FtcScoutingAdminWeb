@@ -26,7 +26,7 @@ div.add {
   color: black;
 }
 
-div.add, span.x, span.edit {
+div.add, span.x, span.edit, span.updown {
   border-width: thin;
   border-color: black;
   border-style: solid;
@@ -51,8 +51,18 @@ span.x {
   padding: 0 2px 0 2px;
 }
 
-span.edit ~ span.x {
+div.editable span.x {
   left: 20px;
+}
+
+span.updown {
+  padding: 0 3px 0 3px;
+  left: 100px;
+  color: black;
+}
+
+span.updown ~ span.updown {
+  left: 103px;
 }
 
 span.edit {
@@ -70,7 +80,7 @@ div.deleteable:hover span.x {
   opacity: 1;
 }
 
-div.editable:hover span.edit {
+div.editable:hover span.edit, div.editable:hover span.updown {
   opacity: 1;
 }
 

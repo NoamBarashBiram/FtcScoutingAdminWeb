@@ -4,7 +4,8 @@ var seasonSelect, regionSelect, eventSelect, configSnapshot, eventsSnapshot,
     eventAdditionDialog, eventsP, autoP, telOpP,
     fieldAdditionDialog, fieldType, fieldKind, fieldAdd, fieldSave, fieldName,
     fieldScore, fieldScoreContainer, fieldMinMax, fieldMin, fieldMax,
-    fieldEntries, fieldEntriesContainer, fieldIndex,
+    fieldEntries, fieldEntriesContainer, fieldIndex, fieldDependency,
+    autoDependencies, telOpDependencies,
     auth, app;
 
 const Modes = {
@@ -43,6 +44,7 @@ document.body.onload = function() {
   fieldEntriesContainer = document.getElementById("fieldEntriesContainer");
   fieldMax = document.getElementById("fieldMax");
   fieldMin = document.getElementById("fieldMin");
+  fieldDependency = document.getElementById("fieldDependency");
   eventAdditionDialog = document.getElementById("eventAddition");
   eventsP = document.getElementById("events");
   autoP = document.getElementById("auto");
@@ -55,6 +57,7 @@ function getNewFieldConf(){
   let fieldConf = {}
   fieldConf.name = fieldName.value;
   fieldConf.type = fieldType.value;
+  fieldConf.dependency = fieldDependency.value;
 
   switch (fieldType.value){
     case Type.INTEGER:
@@ -79,8 +82,10 @@ function addField(kind){
   }
   if (![auto, telOp].includes(kind)) return;
   fieldKind = kind;
+  fieldDependency.innerHTML = kind == auto ? autoDependencies : telOpDependencies;
   fieldAdditionDialog.style.display = "block";
   fieldAdd.style.display = "block";
+
 }
 
 function saveField(){
@@ -124,6 +129,8 @@ function editField(kind, index){
     case Type.CHOICE:
       fieldEntries.value = field.attrs.entries;
   }
+  fieldDependency.innerHTML = kind == auto ? autoDependencies : telOpDependencies;
+  fieldDependency.value = field.attrs.dependency;
   fieldAdditionDialog.style.display = fieldSave.style.display = "block";
   fieldTypeChanged(field.type);
 }
@@ -166,7 +173,7 @@ function validateField(){
       valid = fieldEntries.value.split(",").length > 1 && valid;
   }
   fieldSave.disabled = !(valid);
-  valid &= getField(fieldName.value) == undefined;
+  valid &= getField(fieldKind, fieldName.value) == null;
   fieldAdd.disabled = !(valid);
 }
 
@@ -306,20 +313,39 @@ function updateUI(snapshot, mode){
   } else if (mode == Modes.CONFIG){
     autoP.innerHTML = telOpP.innerHTML = "";
     configSnapshot = snapshot;
+    autoDependencies = telOpDependencies = "<option value=''>Nothing</option>";
     if (readConfig()){
       console.log("Proceeding to UI");
+      let len = autoFields.length;
       for (autoField of autoFields){
+        if (autoField.type == Type.BOOLEAN){
+          autoDependencies += "<option value='_" + autoField.attrs.name + "'>" + autoField.attrs.name + "</option>" +
+                              "<option value='!" + autoField.attrs.name + "'>Not " + autoField.attrs.name + "</option>";
+        }
         autoP.innerHTML += "<div class='deleteable editable'>" + autoField.attrs.name +
                            ", "+ longTypes[autoField.type] +
                            stringify(autoField) +
-                           "<span class='edit' onclick=\"editField(auto, " + autoField.index + ")\">&#x270E;</span>" +
-                           "<span class='x' onclick=\"removeField(auto, " +autoField.index + ")\">&#10006;</span>\
+                           (autoField.index == len - 1 ? "" :
+                           "<span class='updown' onclick='moveDown(auto, " + autoField.index + ")'>&darr;</span>") +
+                           (autoField.index == 0 ? "" :
+                           "<span class='updown' onclick='moveUp(auto, " + autoField.index + ")'>&uarr;</span>") +
+                           "<span class='edit' onclick='editField(auto, " + autoField.index + ")'>&#x270E;</span>" +
+                           "<span class='x' onclick='removeField(auto, " +autoField.index + ")'>&#10006;</span>\
                            </div>"
       }
+      len = telOpFields.length;
       for (telOpField of telOpFields){
+        if (telOpField.type == Type.BOOLEAN){
+          telOpDependencies += "<option value='_" + telOpField.attrs.name + "'>" + telOpField.attrs.name + "</option>" +
+                              "<option value='!" + telOpField.attrs.name + "'>Not " + telOpField.attrs.name + "</option>";
+        }
         telOpP.innerHTML += "<div class='deleteable editable'>" + telOpField.attrs.name +
                            ", "+ longTypes[telOpField.type] +
                            stringify(telOpField) +
+                           (telOpField.index == len - 1 ? "" :
+                           "<span class='updown' onclick='moveDown(telOp, " + telOpField.index + ")'>&darr;</span>")+
+                           (telOpField.index == 0 ? "" :
+                           "<span class='updown' onclick='moveUp(telOp, " + telOpField.index + ")'>&uarr;</span>") +
                            "<span class='edit' onclick=\"editField(telOp, " + telOpField.index + ")\">&#x270E;</span>" +
                            "<span class='x' onclick=\"removeField(telOp, " +telOpField.index + ")\">&#10006;</span>\
                            </div>"

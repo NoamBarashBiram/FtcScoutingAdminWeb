@@ -32,6 +32,8 @@ const longTypes = {
   "???": "Unknown"
 };
 
+var autoFields, telOpFields;
+
 function fireKey(str) {
   return str.replaceAll("{", "{curlBracS}")
             .replaceAll("$", "{dollar}")
@@ -50,24 +52,40 @@ function unFireKey(str){
             .replaceAll("{curlBracS}", "{");
 }
 
-autoFields = [];
-telOpFields = [];
-
-function getFieldByIndex(kind, index){
-  if (kind == auto){
-    return autoFields[index];
-  } else if (kind == telOp){
-    return telOpFields[index];
+function getFields(kind){
+  switch (kind){
+    case auto:
+      return autoFields;
+    case telOp:
+      return telOpFields;
   }
   return null;
 }
 
-function getField(name) {
+function getFieldByIndex(kind, index){
+  return getFields(kind)[index];
+}
+
+function getField(kind, name) {
+  if (kind == auto) {
+    return getAutoField(name);
+  } else if (kind == telOp){
+    return getTelOpField(name);
+  }
+  return null;
+}
+
+function getFieldsNoKind(name){
+  let fields = [];
   let field = getAutoField(name);
   if (field != null){
-    return field;
+    fields.push(field);
   }
-  return getTelOpField(name);
+  field = getTelOpField(name);
+  if (field != null){
+    fields.push(field);
+  }
+  return fields;
 }
 
 function getAutoField(name){
@@ -148,7 +166,6 @@ function getNewConfig(matches, lastValues){
 function readConfig(){
   autoFields = [];
   telOpFields = [];
-  configCache = {}
 
   let valid = true;
   let i = 0;
@@ -165,7 +182,7 @@ function readConfig(){
         autoIndex = i2;
       }
       let autoField = new Field(autoIndex, auto, configSnapshot[auto][autoIndex]);
-      valid = valid && autoField.validate();
+      valid = autoField.validate() && valid;
       autoFields.push(autoField);
       i++;
     }
@@ -174,9 +191,20 @@ function readConfig(){
   i = 0;
   for (let telOpIndex of Object.keys(configSnapshot[telOp])){
     if (telOpIndex != placeholder){
+      if (telOpIndex != i.toString()){
+        valid = false;
+        let i2 = i;
+        while (Object.keys(configSnapshot[telOp]).includes(i2.toString())){
+          i2++;
+        }
+        configSnapshot[telOp][i2] = configSnapshot[auto][telOpIndex];
+        configSnapshot[telOp][telOpIndex] = null;
+        telOpIndex = i2;
+      }
       let telOpField = new Field(telOpIndex, telOp, configSnapshot[telOp][telOpIndex]);
-      valid = valid && telOpField.validate();
+      valid = telOpField.validate() && valid;
       telOpFields.push(telOpField);
+      i++;
     }
   }
 
@@ -199,6 +227,13 @@ class Field {
 
   validate(){
     let valid = true;
+
+    if (this.attrs.dependency == undefined || !["_", "!", undefined].includes(this.attrs.dependency[0])){
+      console.error("Invalid Dependency");
+      valid = false;
+      this.attrs.dependency = configSnapshot[this.kind][this.index].dependency = "";
+    }
+
     if (typeof this.attrs.name != "string"){
       console.error("Invalid Name");
       valid = false;
@@ -418,5 +453,29 @@ function repair() {
   if (!valid){
     console.log("Invalidation Detected.");
     refernce.child("Events").update(eventsSnapshot);
+  }
+}
+
+function swap(kind, index1, index2){
+  let field1 = configSnapshot[kind][index1];
+  configSnapshot[kind][index1] = configSnapshot[kind][index2];
+  configSnapshot[kind][index2] = field1;
+  refernce.child("config").update(configSnapshot);
+}
+
+function moveUp(kind, index){
+  if (index != 0){
+    swap(kind, index, index - 1);
+  } else {
+    throw "Cannot move index 0 up";
+  }
+}
+
+function moveDown(kind, index){
+  let len = kind == auto ? autoFields.length : telOpFields.length;
+  if (index < len - 1){
+    swap(kind, index, index + 1);
+  } else {
+    throw "Cannot move index 0 up";
   }
 }

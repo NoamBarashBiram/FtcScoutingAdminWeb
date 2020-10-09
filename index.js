@@ -8,6 +8,8 @@ var seasonSelect, regionSelect, eventSelect, configSnapshot, eventsSnapshot,
     autoDependencies, telOpDependencies,
     auth, app;
 
+const selfScoringEvent = "__SelfScoring__";
+
 const Modes = {
   EVENTS: 0,
   CONFIG: 1
@@ -299,15 +301,41 @@ function closeEventAddition(){
   selectedRegion = selectedSeason = undefined;
 }
 
+function addSelfScoring(){
+  teamName = fireKey(window.prompt("Set team name e.g. Plantech #17106"));
+  if (teamName == ""){
+    alert("No name was given. Aborting");
+    return;
+  }
+  selfScoring = {};
+  selfScoring[teamName] = {matches: "_"};
+  eventsSnapshot[selfScoringEvent] = selfScoring;
+  refernce.child("Events").update(eventsSnapshot);
+}
+
 function updateUI(snapshot, mode){
   if (mode == Modes.EVENTS){
     // remove all events from the events, auto and telOp <p>
     eventsP.innerHTML = "";
+    hasSelfScoring = false;
     for (event of Object.keys(snapshot)){
       // add the events
-      eventsP.innerHTML += "<div class='deleteable'>" + event +
-                            "<span class='x' onclick=\"removeEvent('" + event + "')\">&#10006;</span>\
+      if (event == selfScoringEvent){
+        // add the self-scoring event
+        hasSelfScoring = true;
+      } else {
+        // add the regular event
+        eventsP.innerHTML += "<div class='deleteable'>" + event +
+                             "<span class='x' onclick=\"removeEvent('" + event + "')\">&#10006;</span>\
+                              </div>";
+      }
+    }
+    if (hasSelfScoring){
+      eventsP.innerHTML += "<div class='deleteable'>Self Scoring- " + unFireKey(Object.keys(snapshot[selfScoringEvent])[0]) +
+                           "<span class='x' onclick=\"removeEvent('" + selfScoringEvent + "')\">&#10006;</span>\
                             </div>";
+    } else {
+      eventsP.innerHTML += '<br><button onclick="addSelfScoring()" style="color:red" title="You haven\'t enabled the Self Scoring">Add Self Scoring</button>';
     }
     eventsSnapshot = snapshot;
   } else if (mode == Modes.CONFIG){

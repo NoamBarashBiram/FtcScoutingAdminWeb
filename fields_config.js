@@ -118,6 +118,9 @@ function getNewValue(field, matches, lastValue){
         return "";
     }
   }
+
+  if (matches == 0) return "";
+
   arr = [];
   let defVal = getNewValue(field);
   let pitVal = defVal;
@@ -182,10 +185,13 @@ function readConfig(){
         autoIndex = i2;
       }
       let autoField = new Field(autoIndex, auto, configSnapshot[auto][autoIndex]);
-      valid = autoField.validate() && valid;
       autoFields.push(autoField);
       i++;
     }
+  }
+
+  for (let autoField of autoFields){
+    valid = autoField.validate() && valid;
   }
 
   i = 0;
@@ -202,10 +208,13 @@ function readConfig(){
         telOpIndex = i2;
       }
       let telOpField = new Field(telOpIndex, telOp, configSnapshot[telOp][telOpIndex]);
-      valid = telOpField.validate() && valid;
       telOpFields.push(telOpField);
       i++;
     }
+  }
+
+  for (let telOpField of telOpFields){
+    valid = telOpField.validate() && valid;
   }
 
   console.log("Config is " + (valid ? "Valid" : "Invalid"));
@@ -232,7 +241,17 @@ class Field {
       console.error("Invalid Dependency");
       valid = false;
       this.attrs.dependency = configSnapshot[this.kind][this.index].dependency = "";
+    } else {
+      let dependencyName = this.attrs.dependency.slice(1);
+      let dependsOn = getField(this.kind, dependencyName);
+      console.log(dependsOn);
+      if (dependencyName != "" && (dependsOn == null || dependsOn.type != Type.BOOLEAN)){
+        console.error("Invalid Dependency");
+        valid = false;
+        this.attrs.dependency = configSnapshot[this.kind][this.index].dependency = "";
+      }
     }
+
 
     if (typeof this.attrs.name != "string"){
       console.error("Invalid Name");
@@ -327,6 +346,14 @@ function validate(value, field, matches){
       field.attrs.entries.split(",").length - 1 : 0;
   value = value.split(";");
 
+  if (matches == 0) {
+    if (value.length == 1 && value[0] == ""){
+      return undefined;
+    } else {
+      return "";
+    }
+  }
+
   if (field.type == Type.INTEGER){
     for (let val in value){
       value[val] = parseInt(value[val]);
@@ -374,7 +401,9 @@ function repair() {
         eventsSnapshot[event][team].matches = matches;
       }
 
-      matches = matches.split(";").length;
+      matches = matches.split(";");
+      matches = matches.length == 1 && matches[0] == "" ? 0 : matches.length
+
 
       if (eventsSnapshot[event][team][auto] != undefined){
         for (let autoField of Object.keys(eventsSnapshot[event][team][auto])){
@@ -403,7 +432,7 @@ function repair() {
             valid = false;
         } else {
           localAutos = remove(localAutos, autoField.attrs.name);
-          let validVal = validate(eventsSnapshot[event][team][auto][autoField.attrs.name], autoField, matches);
+          let validVal = validate(eventsSnapshot[event][team][auto][autoField.attrs.name].toString(), autoField, matches);
           if (validVal != undefined){
             valid = false;
             lastValue = validVal;
@@ -430,7 +459,7 @@ function repair() {
             valid = false;
         } else {
           localTelOps = remove(localTelOps, telOpField.attrs.name);
-          let validVal = validate(eventsSnapshot[event][team][telOp][telOpField.attrs.name], telOpField, matches);
+          let validVal = validate(eventsSnapshot[event][team][telOp][telOpField.attrs.name].toString(), telOpField, matches);
           if (validVal != undefined){
             valid = false;
             lastValue = validVal;

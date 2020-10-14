@@ -308,7 +308,7 @@ function addSelfScoring(){
     return;
   }
   selfScoring = {};
-  selfScoring[teamName] = {matches: "_"};
+  selfScoring[teamName] = {matches: ""};
   eventsSnapshot[selfScoringEvent] = selfScoring;
   refernce.child("Events").update(eventsSnapshot);
 }

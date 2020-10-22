@@ -1,11 +1,11 @@
 var refernce, uid, database, selectedRegion, selectedSeason,
     selectedEventName, selectedEventKey;
 var seasonSelect, regionSelect, eventSelect, configSnapshot, eventsSnapshot,
-    eventAdditionDialog, eventsP, autoP, telOpP,
+    eventAdditionDialog, eventsP, autoP, telOpP, penaltyP,
     fieldAdditionDialog, fieldType, fieldKind, fieldAdd, fieldSave, fieldName,
     fieldScore, fieldScoreContainer, fieldMinMax, fieldMin, fieldMax,
     fieldEntries, fieldEntriesContainer, fieldIndex, fieldDependency,
-    autoDependencies, telOpDependencies,
+    autoDependencies, telOpDependencies, penaltyDependencies,
     auth, app;
 
 const selfScoringEvent = "__SelfScoring__";
@@ -14,6 +14,43 @@ const Modes = {
   EVENTS: 0,
   CONFIG: 1
 };
+
+function getDependencies(kind){
+  switch(kind) {
+    case auto:
+      return autoDependencies;
+    case telOp:
+      return telOpDependencies;
+    case penalty:
+      return penaltyDependencies;
+  }
+  return null;
+}
+
+function addDependecy(kind, dependency){
+  switch(kind) {
+    case auto:
+      autoDependencies += dependency;
+      break;
+    case telOp:
+      telOpDependencies += dependency;
+      break;
+    case penalty:
+      penaltyDependencies += dependency;
+  }
+}
+
+function getFieldsP(kind) {
+  switch(kind) {
+    case auto:
+      return autoP;
+    case telOp:
+      return telOpP;
+    case penalty:
+      return penaltyP;
+  }
+  return null;
+}
 
 function removeEvent(event){
   // removes an event with the name @param event
@@ -51,6 +88,7 @@ document.body.onload = function() {
   eventsP = document.getElementById("events");
   autoP = document.getElementById("auto");
   telOpP = document.getElementById("telop");
+  penaltyP = document.getElementById("penalty");
   auth = document.getElementById("auth");
   app = document.getElementById("app");
 }
@@ -82,12 +120,11 @@ function addField(kind){
     refernce.child("config").update(configSnapshot);
     return;
   }
-  if (![auto, telOp].includes(kind)) return;
+  if (!fieldKinds.includes(kind)) return;
   fieldKind = kind;
-  fieldDependency.innerHTML = kind == auto ? autoDependencies : telOpDependencies;
+  fieldDependency.innerHTML = getDependencies(kind);
   fieldAdditionDialog.style.display = "block";
   fieldAdd.style.display = "block";
-
 }
 
 function saveField(){
@@ -131,7 +168,7 @@ function editField(kind, index){
     case Type.CHOICE:
       fieldEntries.value = field.attrs.entries;
   }
-  fieldDependency.innerHTML = kind == auto ? autoDependencies : telOpDependencies;
+  fieldDependency.innerHTML = getDependencies(kind);
   fieldDependency.value = field.attrs.dependency;
   fieldAdditionDialog.style.display = fieldSave.style.display = "block";
   fieldTypeChanged(field.type);
@@ -339,44 +376,30 @@ function updateUI(snapshot, mode){
     }
     eventsSnapshot = snapshot;
   } else if (mode == Modes.CONFIG){
-    autoP.innerHTML = telOpP.innerHTML = "";
+    autoP.innerHTML = telOpP.innerHTML = penaltyP.innerHTML = "";
     configSnapshot = snapshot;
-    autoDependencies = telOpDependencies = "<option value=''>Nothing</option>";
+    autoDependencies = telOpDependencies = penaltyDependencies = "<option value=''>Nothing</option>";
     if (readConfig()){
       console.log("Proceeding to UI");
-      let len = autoFields.length;
-      for (autoField of autoFields){
-        if (autoField.type == Type.BOOLEAN){
-          autoDependencies += "<option value='_" + autoField.attrs.name + "'>" + autoField.attrs.name + "</option>" +
-                              "<option value='!" + autoField.attrs.name + "'>Not " + autoField.attrs.name + "</option>";
+      for (kind of fieldKinds) {
+        let len = autoFields.length;
+        fields = getFields(kind);
+        for (field of fields){
+          if (field.type == Type.BOOLEAN){
+             addDependecy(kind, "<option value='_" + field.attrs.name + "'>" + field.attrs.name + "</option>" +
+                             "<option value='!" + field.attrs.name + "'>Not " + field.attrs.name + "</option>")
+          }
+          getFieldsP(kind).innerHTML += "<div class='deleteable editable'>" + field.attrs.name +
+                             ", "+ longTypes[field.type] +
+                             stringify(field) +
+                             (field.index == len - 1 ? "" :
+                             "<span class='updown' onclick='moveDown(\"" + kind  + "\", " + field.index + ")'>&darr;</span>") +
+                             (field.index == 0 ? "" :
+                             "<span class='updown' onclick='moveUp(\"" + kind  + "\", " + field.index + ")'>&uarr;</span>") +
+                             "<span class='edit' onclick='editField(\"" + kind  + "\", " + field.index + ")'>&#x270E;</span>" +
+                             "<span class='x' onclick='removeField(\"" + kind  + "\", " +field.index + ")'>&#10006;</span>\
+                             </div>"
         }
-        autoP.innerHTML += "<div class='deleteable editable'>" + autoField.attrs.name +
-                           ", "+ longTypes[autoField.type] +
-                           stringify(autoField) +
-                           (autoField.index == len - 1 ? "" :
-                           "<span class='updown' onclick='moveDown(auto, " + autoField.index + ")'>&darr;</span>") +
-                           (autoField.index == 0 ? "" :
-                           "<span class='updown' onclick='moveUp(auto, " + autoField.index + ")'>&uarr;</span>") +
-                           "<span class='edit' onclick='editField(auto, " + autoField.index + ")'>&#x270E;</span>" +
-                           "<span class='x' onclick='removeField(auto, " +autoField.index + ")'>&#10006;</span>\
-                           </div>"
-      }
-      len = telOpFields.length;
-      for (telOpField of telOpFields){
-        if (telOpField.type == Type.BOOLEAN){
-          telOpDependencies += "<option value='_" + telOpField.attrs.name + "'>" + telOpField.attrs.name + "</option>" +
-                              "<option value='!" + telOpField.attrs.name + "'>Not " + telOpField.attrs.name + "</option>";
-        }
-        telOpP.innerHTML += "<div class='deleteable editable'>" + telOpField.attrs.name +
-                           ", "+ longTypes[telOpField.type] +
-                           stringify(telOpField) +
-                           (telOpField.index == len - 1 ? "" :
-                           "<span class='updown' onclick='moveDown(telOp, " + telOpField.index + ")'>&darr;</span>")+
-                           (telOpField.index == 0 ? "" :
-                           "<span class='updown' onclick='moveUp(telOp, " + telOpField.index + ")'>&uarr;</span>") +
-                           "<span class='edit' onclick=\"editField(telOp, " + telOpField.index + ")\">&#x270E;</span>" +
-                           "<span class='x' onclick=\"removeField(telOp, " +telOpField.index + ")\">&#10006;</span>\
-                           </div>"
       }
     } else {
       console.log("Updateing Config");

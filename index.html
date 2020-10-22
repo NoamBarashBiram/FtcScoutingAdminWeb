@@ -30,10 +30,16 @@
     <div id="app">
       <h3 id="eventsTitle">Events: <div class="add" onclick="addEvent()">+</div></h3>
       <p id="events"></p>
+
       <h3>Auto: <div class="add" onclick="addField(auto)">+</div></h3>
       <p id="auto"></p>
+
       <h3>TelOp: <div class="add" onclick="addField(telOp)">+</div></h3>
       <p id="telop"></p>
+
+      <h3>Penalty: <div class="add" onclick="addField(penalty)">+</div></h3>
+      <p id="penalty"></p>
+
       <button onclick="firebase.auth().signOut()" class="signOutBtn" >Sign Out</button>
       </div>
     </center>

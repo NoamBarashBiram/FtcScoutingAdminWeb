@@ -1,13 +1,13 @@
 const auto = "Autonomous",
     telOp = "TelOp",
+    penalty = "Penalty",
     placeholder = "PLACEHOLDER_DO_NOT_TOUCH",
-    placeholderChildren = {
-        placeholder: ""
-    },
-    placeholderAll = {
-        auto:  placeholderChildren,
-        telOp: placeholderChildren
-    };
+    placeholderChildren = {},
+    placeholderAll = {},
+    fieldKinds = [auto, telOp, penalty];
+
+placeholderChildren[placeholder] = "";
+placeholderAll[auto] = placeholderAll[telOp] = placeholderAll[penalty] = placeholderChildren;
 
 const entries = "entries",
     max =       "max",
@@ -32,7 +32,7 @@ const longTypes = {
   "???": "Unknown"
 };
 
-var autoFields, telOpFields;
+var autoFields, telOpFields, penaltyFields;
 
 function fireKey(str) {
   return str.replaceAll("{", "{curlBracS}")
@@ -58,6 +58,8 @@ function getFields(kind){
       return autoFields;
     case telOp:
       return telOpFields;
+    case penalty:
+      return penaltyFields;
   }
   return null;
 }
@@ -69,8 +71,10 @@ function getFieldByIndex(kind, index){
 function getField(kind, name) {
   if (kind == auto) {
     return getAutoField(name);
-  } else if (kind == telOp){
+  } else if (kind == telOp) {
     return getTelOpField(name);
+  } else if (kind == penalty) {
+    return getPenaltyField(name);
   }
   return null;
 }
@@ -81,6 +85,11 @@ function getFieldsNoKind(name){
   if (field != null){
     fields.push(field);
   }
+  field = getTelOpField(name);
+  if (field != null){
+    fields.push(field);
+  }
+  field = getPenaltyField(name);
   field = getTelOpField(name);
   if (field != null){
     fields.push(field);
@@ -99,6 +108,15 @@ function getAutoField(name){
 
 function getTelOpField(name){
   for (field of telOpFields){
+    if (field.attrs.name == name){
+      return field;
+    }
+  }
+  return null;
+}
+
+function getPenaltyField(name){
+  for (field of penaltyFields){
     if (field.attrs.name == name){
       return field;
     }
@@ -169,52 +187,38 @@ function getNewConfig(matches, lastValues){
 function readConfig(){
   autoFields = [];
   telOpFields = [];
+  penaltyFields = [];
 
   let valid = true;
-  let i = 0;
-  for (let autoIndex of Object.keys(configSnapshot[auto])){
-    if (autoIndex != placeholder){
-      if (autoIndex != i.toString()){
-        valid = false;
-        let i2 = i;
-        while (Object.keys(configSnapshot[auto]).includes(i2.toString())){
-          i2++;
-        }
-        configSnapshot[auto][i2] = configSnapshot[auto][autoIndex];
-        configSnapshot[auto][autoIndex] = null;
-        autoIndex = i2;
-      }
-      let autoField = new Field(autoIndex, auto, configSnapshot[auto][autoIndex]);
-      autoFields.push(autoField);
-      i++;
+  let i;
+
+  for (kind of fieldKinds) {
+    if (!Object.keys(configSnapshot).includes(kind)){
+      configSnapshot[kind] = placeholderChildren;
+      valid = false;
     }
-  }
-
-  for (let autoField of autoFields){
-    valid = autoField.validate() && valid;
-  }
-
-  i = 0;
-  for (let telOpIndex of Object.keys(configSnapshot[telOp])){
-    if (telOpIndex != placeholder){
-      if (telOpIndex != i.toString()){
-        valid = false;
-        let i2 = i;
-        while (Object.keys(configSnapshot[telOp]).includes(i2.toString())){
-          i2++;
+    i = 0;
+    for (let index of Object.keys(configSnapshot[kind])){
+      if (index != placeholder){
+        if (index != i.toString()){
+          valid = false;
+          let i2 = i;
+          while (Object.keys(configSnapshot[kind]).includes(i2.toString())){
+            i2++;
+          }
+          configSnapshot[kind][i2] = configSnapshot[kind][index];
+          configSnapshot[kind][index] = null;
+          index = i2;
         }
-        configSnapshot[telOp][i2] = configSnapshot[auto][telOpIndex];
-        configSnapshot[telOp][telOpIndex] = null;
-        telOpIndex = i2;
+        let field = new Field(index, kind, configSnapshot[kind][index]);
+        getFields(kind).push(field);
+        i++;
       }
-      let telOpField = new Field(telOpIndex, telOp, configSnapshot[telOp][telOpIndex]);
-      telOpFields.push(telOpField);
-      i++;
     }
-  }
 
-  for (let telOpField of telOpFields){
-    valid = telOpField.validate() && valid;
+    for (let field of getFields(kind)){
+      valid = field.validate() && valid;
+    }
   }
 
   console.log("Config is " + (valid ? "Valid" : "Invalid"));
@@ -244,7 +248,6 @@ class Field {
     } else {
       let dependencyName = this.attrs.dependency.slice(1);
       let dependsOn = getField(this.kind, dependencyName);
-      console.log(dependsOn);
       if (dependencyName != "" && (dependsOn == null || dependsOn.type != Type.BOOLEAN)){
         console.error("Invalid Dependency");
         valid = false;
@@ -303,7 +306,7 @@ class Field {
         this.attrs.score = configSnapshot[this.kind][this.index].score = 0;
       } else {
         this.attrs.score = parseInt(this.attrs.score);
-        if (isNaN(this.attrs.score) || this.attrs.score < 0){
+        if (isNaN(this.attrs.score)){
           console.error("Invalid Score");
           valid = false;
           this.attrs.score = configSnapshot[this.kind][this.index].score = 0;
@@ -392,6 +395,10 @@ function repair() {
   let valid = true;
   for (event of Object.keys(eventsSnapshot)){
     for (team of Object.keys(eventsSnapshot[event])){
+      if (typeof eventsSnapshot[event][team] != "object"){
+        eventsSnapshot[event][team] = {};
+        valid = false;
+      }
       let localAutos = [], localTelOps = [];
 
       let matches = eventsSnapshot[event][team].matches;
@@ -475,6 +482,11 @@ function repair() {
         for (telOpField of localTelOps){
           eventsSnapshot[event][team][telOp][telOpField] = null;
         }
+      }
+
+      if (eventsSnapshot[event][team].unplayed == undefined){
+        eventsSnapshot[event][team].unplayed = "";
+        valid = false;
       }
     }
   }

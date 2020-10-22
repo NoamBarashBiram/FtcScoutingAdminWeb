@@ -3,7 +3,7 @@ var refernce, uid, database, selectedRegion, selectedSeason,
 var seasonSelect, regionSelect, eventSelect, configSnapshot, eventsSnapshot,
     eventAdditionDialog, eventsP, autoP, telOpP, penaltyP,
     fieldAdditionDialog, fieldType, fieldKind, fieldAdd, fieldSave, fieldName,
-    fieldScore, fieldScoreContainer, fieldMinMax, fieldMin, fieldMax,
+    fieldScore, fieldScoreContainer, fieldIntOnly, fieldMin, fieldMax,
     fieldEntries, fieldEntriesContainer, fieldIndex, fieldDependency,
     autoDependencies, telOpDependencies, penaltyDependencies,
     auth, app;
@@ -78,7 +78,7 @@ document.body.onload = function() {
   fieldName = document.getElementById("fieldName");
   fieldScore = document.getElementById("fieldScore");
   fieldScoreContainer = document.getElementById("fieldScoreContainer");
-  fieldMinMax = document.getElementById("fieldMinMax");
+  fieldIntOnly = document.getElementById("fieldIntOnly");
   fieldEntries = document.getElementById("fieldEntries");
   fieldEntriesContainer = document.getElementById("fieldEntriesContainer");
   fieldMax = document.getElementById("fieldMax");
@@ -103,6 +103,7 @@ function getNewFieldConf(){
     case Type.INTEGER:
       fieldConf.min = parseInt(fieldMin.value);
       fieldConf.max = parseInt(fieldMax.value);
+      fieldConf.step = parseInt(fieldStep.value);
     case Type.BOOLEAN:
       fieldConf.score = parseInt(fieldScore.value);
       break;
@@ -162,6 +163,7 @@ function editField(kind, index){
     case Type.INTEGER:
       fieldMin.value = field.attrs.min;
       fieldMax.value = field.attrs.max;
+      fieldStep.value = field.attrs.step;
     case Type.BOOLEAN:
       fieldScore.value = field.attrs.score;
       break;
@@ -202,9 +204,11 @@ function validateField(){
   let valid = fieldName.value != "";
   switch (fieldType.value) {
     case Type.INTEGER:
-      let min = fieldMin.value, max = fieldMax.value;
+      let min = fieldMin.value, max = fieldMax.value, step = fieldStep.value;
       valid = !(isNaN(min) || isNaN(max) || min == "" || max == "") && valid;
       valid = parseInt(max) >= parseInt(min) && valid
+      valid = !(isNaN(step) || step == "") && valid;
+      valid = parseInt(step) >= 1 && valid;
     case Type.BOOLEAN:
       valid = !(isNaN(fieldScore.value) || fieldScore.value == "") && valid;
       break;
@@ -217,12 +221,12 @@ function validateField(){
 }
 
 function fieldTypeChanged(type){
-  fieldMinMax.style.display = "none";
+  fieldIntOnly.style.display = "none";
   fieldScoreContainer.style.display = "none";
   fieldEntriesContainer.style.display = "none"
   switch (type) {
     case Type.INTEGER:
-      fieldMinMax.style.display = "block";
+      fieldIntOnly.style.display = "block";
     case Type.BOOLEAN:
       fieldScoreContainer.style.display = "block";
       break;
@@ -240,7 +244,7 @@ function closeFieldAddition(){
   fieldMax.value = 1;
   fieldMin.value = fieldScore.value = 0;
   fieldScoreContainer.style.display = fieldEntriesContainer.style.display =
-    fieldMinMax.style.display = fieldAdd.style.display = fieldSave.style.display = "none";
+    fieldIntOnly.style.display = fieldAdd.style.display = fieldSave.style.display = "none";
 }
 
 function addEvent(){

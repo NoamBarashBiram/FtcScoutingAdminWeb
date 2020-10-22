@@ -88,13 +88,17 @@
         </select>
         <br>
         <br>
-        <div id="fieldMinMax" style="display:none">
+        <div id="fieldIntOnly" style="display:none">
           <label for="fieldMin">Min: </label>
           <input id="fieldMin" name="fieldMin" placeholder="Minimum" type="number" step="1" value="0" onkeyup="validateMinMax('min')" onchange="if (isNaN(this.value) || this.value == ''){this.value = '0'; validateMinMax('min')}">
           <br>
           <br>
           <label for="fieldMax">Max: </label>
           <input id="fieldMax" name="fieldMax" placeholder="Maximum" type="number" step="1" value="1" onkeyup="validateMinMax('max')" onchange="if (isNaN(this.value) || this.value == ''){this.value = '0'; validateMinMax('max')}">
+          <br>
+          <br>
+          <label for="fieldStep">Step: </label>
+          <input id="fieldStep" name="fieldStep" placeholder="Step" type="number" step="1" value="1" min="1" onkeyup="validateField()" onchange="if (isNaN(this.value) || this.value == ''){this.value = '0'; validateField()}">
           <br>
           <br>
         </div>

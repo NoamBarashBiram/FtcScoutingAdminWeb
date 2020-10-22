@@ -291,6 +291,20 @@ class Field {
           this.attrs.max = configSnapshot[this.kind][this.index].max = this.attrs.min + 1;
         }
       }
+
+      if (this.attrs.step == undefined){
+        console.error("No Step");
+        valid = false;
+        this.attrs.step = configSnapshot[this.kind][this.index].step = 1;
+      } else {
+        this.attrs.step = parseInt(this.attrs.step);
+        if (isNaN(this.attrs.step) || this.attrs.step == 0 || this.attrs.step > (this.attrs.max - this.attrs.min)){
+          console.error("Invalid Score");
+          valid = false;
+          this.attrs.step = configSnapshot[this.kind][this.index].step = this.attrs.max - this.attrs.min;
+        }
+      }
+
     } else if (this.type == Type.CHOICE){
       if (typeof this.attrs.entries != "string"){
         console.error("No Entries");
@@ -399,7 +413,6 @@ function repair() {
         eventsSnapshot[event][team] = {};
         valid = false;
       }
-      let localAutos = [], localTelOps = [];
 
       let matches = eventsSnapshot[event][team].matches;
       if (matches == undefined || ! (typeof matches == "string")){
@@ -411,82 +424,48 @@ function repair() {
       matches = matches.split(";");
       matches = matches.length == 1 && matches[0] == "" ? 0 : matches.length
 
-
-      if (eventsSnapshot[event][team][auto] != undefined){
-        for (let autoField of Object.keys(eventsSnapshot[event][team][auto])){
-          localAutos.push(autoField);
-        }
-      } else {
-        valid = false;
-        eventsSnapshot[event][team][auto] = {};
-      }
-
-      if (eventsSnapshot[event][team][telOp] != undefined){
-        for (let telOpField of Object.keys(eventsSnapshot[event][team][telOp])){
-          localTelOps.push(telOpField);
-        }
-      } else {
-        valid = false;
-        eventsSnapshot[event][team][telOp] = {};
-      }
-
-      for (let autoField of autoFields){
-        if (autoField.type == Type.TITLE){
-          continue;
-        }
-        let lastValue = undefined;
-        if (!localAutos.includes(autoField.attrs.name)){
-            valid = false;
+      for (kind of fieldKinds) {
+        let localFields = [];
+        if (eventsSnapshot[event][team][kind] != undefined){
+          for (let field of Object.keys(eventsSnapshot[event][team][kind])){
+            localFields.push(field);
+          }
         } else {
-          localAutos = remove(localAutos, autoField.attrs.name);
-          let validVal = validate(eventsSnapshot[event][team][auto][autoField.attrs.name].toString(), autoField, matches);
-          if (validVal != undefined){
-            valid = false;
-            lastValue = validVal;
-          } else {
+          valid = false;
+          eventsSnapshot[event][team][kind] = {};
+        }
+
+        for (let field of getFields(kind)){
+          if (field.type == Type.TITLE){
             continue;
           }
-        }
-        eventsSnapshot[event][team][auto][autoField.attrs.name] = getNewValue(autoField, matches, lastValue);
-      }
-
-      if (localAutos.length != 0){
-        valid = false;
-        for (autoField of localAutos){
-          eventsSnapshot[event][team][auto][autoField] = null;
-        }
-      }
-
-      for (let telOpField of telOpFields){
-        if (telOpField.type == Type.TITLE){
-          continue;
-        }
-        let lastValue = undefined;
-        if (!localTelOps.includes(telOpField.attrs.name)){
-            valid = false;
-        } else {
-          localTelOps = remove(localTelOps, telOpField.attrs.name);
-          let validVal = validate(eventsSnapshot[event][team][telOp][telOpField.attrs.name].toString(), telOpField, matches);
-          if (validVal != undefined){
-            valid = false;
-            lastValue = validVal;
+          let lastValue = undefined;
+          if (!localFields.includes(field.attrs.name)){
+              valid = false;
           } else {
-            continue;
+            localFields = remove(localFields, field.attrs.name);
+            let validVal = validate(eventsSnapshot[event][team][kind][field.attrs.name].toString(), field, matches);
+            if (validVal != undefined){
+              valid = false;
+              lastValue = validVal;
+            } else {
+              continue;
+            }
+          }
+          eventsSnapshot[event][team][kind][field.attrs.name] = getNewValue(field, matches, lastValue);
+        }
+
+        if (eventsSnapshot[event][team].unplayed == undefined){
+          eventsSnapshot[event][team].unplayed = "";
+          valid = false;
+        }
+
+        if (localFields.length != 0){
+          valid = false;
+          for (let field of localFields){
+            eventsSnapshot[event][team][kind][field] = null;
           }
         }
-        eventsSnapshot[event][team][telOp][telOpField.attrs.name] = getNewValue(telOpField, matches, lastValue);
-      }
-
-      if (localTelOps.length != 0){
-        valid = false;
-        for (telOpField of localTelOps){
-          eventsSnapshot[event][team][telOp][telOpField] = null;
-        }
-      }
-
-      if (eventsSnapshot[event][team].unplayed == undefined){
-        eventsSnapshot[event][team].unplayed = "";
-        valid = false;
       }
     }
   }

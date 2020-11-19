@@ -1,11 +1,11 @@
 var refernce, uid, database, selectedRegion, selectedSeason,
     selectedEventName, selectedEventKey;
 var seasonSelect, regionSelect, eventSelect, configSnapshot, eventsSnapshot,
-    eventAdditionDialog, eventsP, autoP, telOpP, penaltyP,
+    eventAdditionDialog, eventsP, autoP, teleOpP, penaltyP,
     fieldAdditionDialog, fieldType, fieldKind, fieldAdd, fieldSave, fieldName,
     fieldScore, fieldScoreContainer, fieldIntOnly, fieldMin, fieldMax,
     fieldEntries, fieldEntriesContainer, fieldIndex, fieldDependency,
-    autoDependencies, telOpDependencies, penaltyDependencies,
+    autoDependencies, teleOpDependencies, penaltyDependencies,
     auth, app;
 
 const selfScoringEvent = "__SelfScoring__";
@@ -19,8 +19,8 @@ function getDependencies(kind){
   switch(kind) {
     case auto:
       return autoDependencies;
-    case telOp:
-      return telOpDependencies;
+    case teleOp:
+      return teleOpDependencies;
     case penalty:
       return penaltyDependencies;
   }
@@ -32,8 +32,8 @@ function addDependecy(kind, dependency){
     case auto:
       autoDependencies += dependency;
       break;
-    case telOp:
-      telOpDependencies += dependency;
+    case teleOp:
+      teleOpDependencies += dependency;
       break;
     case penalty:
       penaltyDependencies += dependency;
@@ -44,8 +44,8 @@ function getFieldsP(kind) {
   switch(kind) {
     case auto:
       return autoP;
-    case telOp:
-      return telOpP;
+    case teleOp:
+      return teleOpP;
     case penalty:
       return penaltyP;
   }
@@ -87,7 +87,7 @@ document.body.onload = function() {
   eventAdditionDialog = document.getElementById("eventAddition");
   eventsP = document.getElementById("events");
   autoP = document.getElementById("auto");
-  telOpP = document.getElementById("telop");
+  teleOpP = document.getElementById("teleop");
   penaltyP = document.getElementById("penalty");
   auth = document.getElementById("auth");
   app = document.getElementById("app");
@@ -115,7 +115,7 @@ function getNewFieldConf(){
 
 function addField(kind){
   if (kind == undefined){
-    let index = fieldKind == auto ? autoFields.length : telOpFields.length;
+    let index = fieldKind == auto ? autoFields.length : teleOpFields.length;
     configSnapshot[fieldKind][index] = getNewFieldConf();
     closeFieldAddition();
     refernce.child("config").update(configSnapshot);
@@ -356,7 +356,7 @@ function addSelfScoring(){
 
 function updateUI(snapshot, mode){
   if (mode == Modes.EVENTS){
-    // remove all events from the events, auto and telOp <p>
+    // remove all events from the events, auto and teleOp <p>
     eventsP.innerHTML = "";
     hasSelfScoring = false;
     for (event of Object.keys(snapshot)){
@@ -380,9 +380,9 @@ function updateUI(snapshot, mode){
     }
     eventsSnapshot = snapshot;
   } else if (mode == Modes.CONFIG){
-    autoP.innerHTML = telOpP.innerHTML = penaltyP.innerHTML = "";
+    autoP.innerHTML = teleOpP.innerHTML = penaltyP.innerHTML = "";
     configSnapshot = snapshot;
-    autoDependencies = telOpDependencies = penaltyDependencies = "<option value=''>Nothing</option>";
+    autoDependencies = teleOpDependencies = penaltyDependencies = "<option value=''>Nothing</option>";
     if (readConfig()){
       console.log("Proceeding to UI");
       for (kind of fieldKinds) {

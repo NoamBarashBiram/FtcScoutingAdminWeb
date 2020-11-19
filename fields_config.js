@@ -1,13 +1,13 @@
 const auto = "Autonomous",
-    telOp = "TelOp",
+    teleOp = "TeleOp",
     penalty = "Penalty",
     placeholder = "PLACEHOLDER_DO_NOT_TOUCH",
     placeholderChildren = {},
     placeholderAll = {},
-    fieldKinds = [auto, telOp, penalty];
+    fieldKinds = [auto, teleOp, penalty];
 
 placeholderChildren[placeholder] = "";
-placeholderAll[auto] = placeholderAll[telOp] = placeholderAll[penalty] = placeholderChildren;
+placeholderAll[auto] = placeholderAll[teleOp] = placeholderAll[penalty] = placeholderChildren;
 
 const entries = "entries",
     max =       "max",
@@ -32,7 +32,7 @@ const longTypes = {
   "???": "Unknown"
 };
 
-var autoFields, telOpFields, penaltyFields;
+var autoFields, teleOpFields, penaltyFields;
 
 function fireKey(str) {
   return str.replaceAll("{", "{curlBracS}")
@@ -56,8 +56,8 @@ function getFields(kind){
   switch (kind){
     case auto:
       return autoFields;
-    case telOp:
-      return telOpFields;
+    case teleOp:
+      return teleOpFields;
     case penalty:
       return penaltyFields;
   }
@@ -71,8 +71,8 @@ function getFieldByIndex(kind, index){
 function getField(kind, name) {
   if (kind == auto) {
     return getAutoField(name);
-  } else if (kind == telOp) {
-    return getTelOpField(name);
+  } else if (kind == teleOp) {
+    return getTeleOpField(name);
   } else if (kind == penalty) {
     return getPenaltyField(name);
   }
@@ -85,12 +85,12 @@ function getFieldsNoKind(name){
   if (field != null){
     fields.push(field);
   }
-  field = getTelOpField(name);
+  field = getTeleOpField(name);
   if (field != null){
     fields.push(field);
   }
   field = getPenaltyField(name);
-  field = getTelOpField(name);
+  field = getTeleOpField(name);
   if (field != null){
     fields.push(field);
   }
@@ -106,8 +106,8 @@ function getAutoField(name){
   return null;
 }
 
-function getTelOpField(name){
-  for (field of telOpFields){
+function getTeleOpField(name){
+  for (field of teleOpFields){
     if (field.attrs.name == name){
       return field;
     }
@@ -169,14 +169,14 @@ function getNewConfig(matches, lastValues){
     }
   }
 
-  config[telOp] = {}
-  for (field of telOpFields){
+  config[teleOp] = {}
+  for (field of teleOpFields){
     if (field.type != Type.TITLE){
       let lastValue = undefined;
-      if (lastValues != undefined && lastValues[telOp]){
-        lastValue = lastValues[telOp][field.attrs.name]
+      if (lastValues != undefined && lastValues[teleOp]){
+        lastValue = lastValues[teleOp][field.attrs.name]
       }
-      config[telOp][field.attrs.name] = getNewValue(field, matches, lastValue);
+      config[teleOp][field.attrs.name] = getNewValue(field, matches, lastValue);
     }
   }
 
@@ -186,7 +186,7 @@ function getNewConfig(matches, lastValues){
 
 function readConfig(){
   autoFields = [];
-  telOpFields = [];
+  teleOpFields = [];
   penaltyFields = [];
 
   let valid = true;
@@ -492,7 +492,7 @@ function moveUp(kind, index){
 }
 
 function moveDown(kind, index){
-  let len = kind == auto ? autoFields.length : telOpFields.length;
+  let len = kind == auto ? autoFields.length : teleOpFields.length;
   if (index < len - 1){
     swap(kind, index, index + 1);
   } else {

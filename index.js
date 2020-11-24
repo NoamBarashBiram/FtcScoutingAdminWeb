@@ -54,7 +54,7 @@ function getFieldsP(kind) {
 
 function removeEvent(event){
   // removes an event with the name @param event
-  if (window.confirm("Are you sure you want to delete " + event + "?")){
+  if (window.confirm("Are you sure you want to delete " + unFireKey(event) + "?")){
     refernce.child("Events").child(event).remove();
   }
 }
@@ -281,7 +281,7 @@ function selected(){
         if (division != null){
           event += "- " + division + " Division";
         }
-        eventSelect.innerHTML += "<option value='" + eventKey + "|" + event + "'>" + event + "</option>";
+        eventSelect.innerHTML += "<option value='" + eventKey + "|" + fireKey(event) + "'>" + event + "</option>";
       }
     })
   }
@@ -366,7 +366,7 @@ function updateUI(snapshot, mode){
         hasSelfScoring = true;
       } else {
         // add the regular event
-        eventsP.innerHTML += "<div class='deleteable'>" + event +
+        eventsP.innerHTML += "<div class='deleteable'>" + unFireKey(event) +
                              "<span class='x' onclick=\"removeEvent('" + event + "')\">&#10006;</span>\
                               </div>";
       }
